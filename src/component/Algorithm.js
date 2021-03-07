@@ -132,6 +132,7 @@ function useSortingVisualizer(baseArray, algorithm){
     }
 }
 
+
 function* bubbleSort(from, to) {
     let swapped;
     do {
@@ -164,6 +165,35 @@ function* insertionSort(from, to, arr){
 
 }
 
+function *merge(left, right) {
+    let arr = []
+    // Break out of loop if any one of the array gets empty
+    while (left.length && right.length) {
+        // Pick the smaller among the smallest element of left and right sub arrays
+        if ((yield compare(left[0], right[0])) > 0) {
+            arr.push(left.shift())
+        } else {
+            arr.push(right.shift())
+        }
+    }
+
+    // Concatenating the leftover elements
+    // (in case we didn't go through the entire left or right array)
+    return [ ...arr, ...left, ...right ]
+}
+
+function mergeSort(array) {
+    const half = array.length / 2
+
+    // Base case or terminating case
+    if(array.length < 2){
+        return array
+    }
+
+    const left = array.splice(0, half)
+    return merge(mergeSort(left),mergeSort(array))
+}
+
 function makeArray(length,minVal, maxVal) {
     const array = [];
     for(let i = 0; i < length; i++) {
@@ -179,7 +209,7 @@ function Algorithm(props){
     let arrLength = 300
     console.log(bubbleSort)
     const [arr, setArr] = useState(makeArray(arrLength, min, max))
-    const algorithm = useRef( () =>bubbleSort);
+    const algorithm = useRef( bubbleSort);
 
 
     const {
@@ -233,11 +263,11 @@ function Algorithm(props){
                 {bars}
 
             </div>
-            <div className='border align-items-center justify-content-center flex' style={{display: 'flex'}}>
-                <button className="btn btn-outline-secondary mx-4 my-2" onClick={() => setArr(makeArray(100, 2, 1000))}>Randomize Array</button>
-                <button className="btn btn-outline-secondary mx-4 my-2" onClick={step}>Single Step</button>
+            <div className='align-items-center justify-content-center flex' style={{display: 'flex'}}>
+                <button className="btn btn-outline-primary mx-4 my-2" onClick={() => setArr(makeArray(100, 2, 1000))}>Randomize Array</button>
+                <button className="btn btn-outline-primary mx-4 my-2" onClick={step}>Single Step</button>
 
-                <button className="btn btn-outline-secondary mx-4 my-2" onClick={() => setPlay(playing => !playing)}>{playing ? 'Pause autoplay' : 'Autoplay'}</button>
+                <button className="btn btn-outline-primary mx-4 my-2" onClick={() => setPlay(playing => !playing)}>{playing ? 'Pause autoplay' : 'Autoplay'}</button>
             </div>
         </>
     )

@@ -1,12 +1,8 @@
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
+
 
 body{
-  background-color: grey;
+  background-color: black !important;
   justify-content: center;
   align-items: center;
 }
@@ -36,7 +32,7 @@ body{
   display: flex;
   width: 80vw;
   margin: auto;
-
+  background-color: grey;
   height: 80vh;
   border: 1px solid black;
   overflow: visible;
