@@ -1,7 +1,7 @@
 import React,{ useState, useReducer, useEffect, useRef, useCallback } from 'react'
 import Bar from './Bar'
 import Header from "./Header";
-//import {bubbleSort, insertionSort} from "../algorithms";
+import {bubbleSort, insertionSort} from "../algorithms";
 
 function compare(a/*: number*/, b/*: number*/)/*: ['compare', number, number]*/ {
     console.log('compare called')
@@ -11,11 +11,22 @@ function swap(a/*: number*/, b/*: number*/)/*: ['swap', number, number]*/ {
     return ['swap', a, b];
 }
 
+function colorFrom(start, end){
+    return['colorRange', start, end]
+}
+
 function moveForward(a/*: number*/, b/*: number*/)/*: ['swap', number, number]*/ {
     return ['overwrite', a, b];
 }
 
+function partition(start, end, arr){
+    console.log('partition called')
+    mergeSort(start,end ,arr)
+    return ['partition', start, end]
+}
+
 function set(a, num){
+    console.log('set called')
     return ['set', a, num];
 }
 function setMarker(a){
@@ -25,6 +36,76 @@ function compareToVal(a,num, numIdx){
     return ['compareVal', a, num, numIdx];
 }
 
+function overwriteSection(start, arr){
+    return ['overwriteFrom', start, arr]
+}
+
+/*
+todo        feeling like using this implementation of generator mergesort makes it impossible to animate since the functions to animalte in useSortingVisualizer
+todo        automatically give their return to each other in a deep recursive loop when the animations need to go to the caller halfway through the recursion
+
+
+ */
+function* mergeSort(start, end, arr) {
+    console.log('the indexes are start: ' + start + ' end: ' + end)
+
+    let middle = Math.floor((end + start) / 2)
+
+    if (end - start < 2) {
+        let baseCaseArr = arr.slice(start, end)
+        console.log('we reached the base case, This already feels like a success heres what we return', baseCaseArr)
+        return arr.slice(start, end)
+    }
+
+
+    let left = yield* mergeSort(start, middle, arr)
+    let right = yield* mergeSort(middle, end, arr)
+    console.log(left)
+
+    //left = left.next().value
+    //right = right.next().value
+    console.log(left)
+
+    yield overwriteSection(start, left)
+    yield overwriteSection(start, right)
+
+    //console.log('now the arrays to be merged are ', left, right)
+
+    let tempArr = []
+    let a = 0
+    let b = 0
+    let c = 0
+
+
+    while (a < left.length  && b < right.length) {
+        if((yield compare(left[a] < right[b]) === 1))
+        {
+            tempArr.push(left[a])
+            a++
+        }
+        else{
+            tempArr.push(right[b])
+            b++
+        }
+
+    }
+    while(b< right.length)
+    {
+        tempArr.push(right[b])
+        b++
+    }
+
+    while(a< left.length)
+    {
+        tempArr.push(left[a])
+        a++
+    }
+    yield overwriteSection(start, tempArr)
+    return tempArr
+
+
+}
+
 
 function useSortingVisualizer(baseArray, algorithm){
     const [displayedArray, setArray] = useState([]);
@@ -32,7 +113,7 @@ function useSortingVisualizer(baseArray, algorithm){
     const [barEffects, setBarEffects] = useState({})
     const stepRef = useRef(() => {});
     useEffect(() => {
-        console.log('usesorting visualizer useEffect, I think this is called only once when the component first renders')
+        console.log('use sorting visualizer useEffect, I think this is called only once when the component first renders')
         let workingArray = baseArray;
         setArray(workingArray);
         setBarEffects({});
@@ -40,11 +121,13 @@ function useSortingVisualizer(baseArray, algorithm){
         console.log('here is the algorithm' , algorithm)
 
         const generator = algorithm(0, baseArray.length, workingArray);
+        console.log(baseArray.length)
         let nextValue = 0;
         function doStep() {
             const action = generator.next(nextValue);
-            console.log(action)
+            console.log('we have received this from the generator ',action, 'is the value an array , ',Array.isArray(action.value))
             if (action.done) {
+                console.log('the generator is done')
                 setDone(true);
             } else if (action.value[0] === 'compare') {
                 const a = workingArray[action.value[1]];
@@ -60,7 +143,8 @@ function useSortingVisualizer(baseArray, algorithm){
                     [action.value[1]]: 'red',
                     [action.value[2]]: 'red',
                 })
-            } else if (action.value[0] === 'swap') {
+            }
+            else if (action.value[0] === 'swap') {
                 workingArray = [...workingArray]
                 const tmp = workingArray[action.value[1]];
                 workingArray[action.value[1]] = workingArray[action.value[2]];
@@ -79,14 +163,27 @@ function useSortingVisualizer(baseArray, algorithm){
                     [action.value[2]]: 'green',
                 })
             }
+            else if(action.value[0] === 'overwriteFrom') {
+                workingArray = [...workingArray]
+                let arr = action.value[2]
+                let j = 0
+                let start = action.value[1]
+                for (let i = action.value[1]; i < action.value[2].length + action.value[1]; i++)
+                {
+                    workingArray[i] = arr[j]
+                    j++
+                }
+                setArray(workingArray);
+
+            }
             else if(action.value[0] === 'set') {
-                    workingArray = [...workingArray]
-                    workingArray[action.value[1]] = action.value[2];
-                    setArray(workingArray);
-                    setBarEffects({
-                        [action.value[1]]: 'blue',
-                        [action.value[2]]: 'blue',
-                    })
+                workingArray = [...workingArray]
+                workingArray[action.value[1]] = action.value[2];
+                setArray(workingArray);
+                setBarEffects({
+                    [action.value[1]]: 'blue',
+                    [action.value[2]]: 'blue',
+                })
             }
             else if(action.value[0] === 'setMarker') {
                 workingArray = [...workingArray]
@@ -95,6 +192,38 @@ function useSortingVisualizer(baseArray, algorithm){
                 setBarEffects({
                     [action.value[1]]: 'blue',
 
+                })
+            }
+            else if(action.value[0] === 'colorRange') {
+                workingArray = [...workingArray]
+                setArray(workingArray);
+                for(let i = action.value[1]; i<action.value[2]; i++) {
+                    setBarEffects({
+                        [action.value[i]]: 'blue',
+
+                    })
+                }
+            }
+
+            else if(action.value[0] === 'overwriteFrom') {
+                console.log('has this been called at all', action.value[2], action.value[1])
+                workingArray = [...workingArray]
+                let start = action.value[1]
+                setArray(workingArray);
+                for(let i = start; i<action.value[2].length+start; i++) {
+                    setBarEffects({
+                        [action.value[i]]: 'blue',
+
+                    })
+                }
+            }
+
+            else if(action.value[0] === 'partition') {
+                workingArray = [...workingArray]
+                nextValue = workingArray.slice(action[1], action[2] )
+                setBarEffects({
+                    [action.value[1]]: 'blue',
+                    [action.value[2]]: 'blue',
                 })
             }
             else if(action.value[0] === 'compareVal') {
@@ -117,6 +246,7 @@ function useSortingVisualizer(baseArray, algorithm){
             else {
                 throw new Error('What? ' + JSON.stringify(action.value));
             }
+            console.log('we passed the ifs', done, Array.isArray(action.value))
         }
         stepRef.current = doStep;
     }, [baseArray, algorithm])
@@ -133,67 +263,6 @@ function useSortingVisualizer(baseArray, algorithm){
 }
 
 
-function* bubbleSort(from, to) {
-    let swapped;
-    do {
-        swapped = false;
-        to -= 1; // decrement by 1 EACH loop, as we know the last element will be in place
-        for (let j = from; j < to; j++) {
-            if ((yield compare(j, j + 1)) > 0) {
-                yield swap(j, j + 1);
-                swapped = true;
-            }
-        }
-    } while(swapped);
-}
-
-function* insertionSort(from, to, arr){
-
-    let marker;//this is for the element that is first in the unsorted list
-
-    for(let i =1;i<to;i++)
-    {
-        let temp = yield setMarker(i)
-        let j = i - 1
-        while(j >= 0 && (yield compareToVal(j,temp, i)) > 0){
-            console.log('j was more than I so mvoe j forward')
-            yield moveForward(j, j+1 )
-            j = j - 1
-        }
-        yield set(j+1, temp)
-    }
-
-}
-
-function *merge(left, right) {
-    let arr = []
-    // Break out of loop if any one of the array gets empty
-    while (left.length && right.length) {
-        // Pick the smaller among the smallest element of left and right sub arrays
-        if ((yield compare(left[0], right[0])) > 0) {
-            arr.push(left.shift())
-        } else {
-            arr.push(right.shift())
-        }
-    }
-
-    // Concatenating the leftover elements
-    // (in case we didn't go through the entire left or right array)
-    return [ ...arr, ...left, ...right ]
-}
-
-function mergeSort(array) {
-    const half = array.length / 2
-
-    // Base case or terminating case
-    if(array.length < 2){
-        return array
-    }
-
-    const left = array.splice(0, half)
-    return merge(mergeSort(left),mergeSort(array))
-}
-
 function makeArray(length,minVal, maxVal) {
     const array = [];
     for(let i = 0; i < length; i++) {
@@ -204,10 +273,11 @@ function makeArray(length,minVal, maxVal) {
 
 function Algorithm(props){
     let min = 3
+    console.log('component is being rendered')
 
     let max = 1000
-    let arrLength = 300
-    console.log(bubbleSort)
+    let arrLength = 600
+
     const [arr, setArr] = useState(makeArray(arrLength, min, max))
     const algorithm = useRef( bubbleSort);
 
@@ -224,7 +294,7 @@ function Algorithm(props){
         if(!done && playing) {
             let taskId = window.setInterval(() => {
                 step();
-            }, 1)
+            }, 0.01)
             return () => window.clearInterval(taskId);
         }
     }, [done, step, playing, algorithm])
@@ -255,7 +325,8 @@ function Algorithm(props){
             <nav style={{margin: '0 auto', width: '100%', justifyContent: 'center'}}className="navbar navbar-light bg-light navbar-expand-sm">
 
                     <button onClick={(e) => algorithm.current = insertionSort} className="btn btn-outline-success m-1" type="button">insertion sort</button>
-                    <button onClick={(e) => algorithm.current =bubbleSort} className="btn btn-outline-success" type="button">bubble sort</button>
+                    <button onClick={(e) => algorithm.current =bubbleSort} className="btn btn-outline-success m-1" type="button">bubble sort</button>
+                    <button onClick={(e) => algorithm.current =mergeSort} className="btn btn-outline-success m-1" type="button">merge sort</button>
 
             </nav>
             <div className='array-container'>

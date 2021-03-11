@@ -1,6 +1,6 @@
 
 let arr = []
-let arrLength=300
+let arrLength=100
 let min = 3
 let max = 1000
 for (let i = 0;i<arrLength;i++)
@@ -49,7 +49,7 @@ export function* bubbleSort(from, to) {
 
 export function* insertionSort(from, to, arr){
 
-    let marker;//this is for the element that is first in the unsorted list
+
 
     for(let i =1;i<to;i++)
     {
@@ -67,6 +67,7 @@ export function* insertionSort(from, to, arr){
 
 function merge(left, right) {
     let arr = []
+    console.log('merge called')
     // Break out of loop if any one of the array gets empty
     while (left.length && right.length) {
         // Pick the smaller among the smallest element of left and right sub arrays
@@ -83,6 +84,7 @@ function merge(left, right) {
 }
 
 function mergeSort(array) {
+
     const half = array.length / 2
 
     // Base case or terminating case

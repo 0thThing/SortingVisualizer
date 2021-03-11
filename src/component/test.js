@@ -1,155 +1,159 @@
-import React,{ useState, useReducer, useEffect, useRef, useCallback } from 'react'
-import '../App.css'
-// Sorting things
-function compare(a/*: number*/, b/*: number*/)/*: ['compare', number, number]*/ {
-    return ['compare', a, b];
-}
-function swap(a/*: number*/, b/*: number*/)/*: ['swap', number, number]*/ {
-    return ['swap', a, b];
-}
 
-function* bubbleSort(from/*: number*/, to/*: number*/)/*: Generator<['swap' | 'compare', number, number], void, number> */ {
-    let swapped/*: boolean */;
-    do {
-        swapped = false;
-        to -= 1; // decrement by 1 EACH loop, as we know the last element will be in place
-        for (let j = from; j < to; j++) {
-            if ((yield compare(j, j + 1)) > 0) {
-                yield swap(j, j + 1);
-                swapped = true;
-            }
+
+
+
+function* mergeSort(start, end, arr) {
+    console.log('the indexes are start: ' + start + ' end: ' + end)
+
+    let middle = Math.floor((end + start) / 2)
+
+    if (end - start < 2) {
+        let baseCaseArr = arr.slice(start, end)
+        console.log('we reached the base case, This already feels like a success heres what we return', baseCaseArr)
+        return arr.slice(start, end)
+    }
+
+
+    let left = yield* mergeSort(start, middle, arr)
+    let right = yield* mergeSort(middle, end, arr)
+    console.log(left)
+
+    //left = left.next().value
+    //right = right.next().value
+    console.log(left)
+
+    yield left
+    yield right
+
+    //console.log('now the arrays to be merged are ', left, right)
+    // Break out of loop if any one of the array gets empty
+    let tempArr = []
+    let a = 0
+    let b = 0
+    let c = 0
+
+
+    while (a < left.length  && b < right.length) {
+        if(left[a] < right[b])
+        {
+            tempArr.push(left[a])
+            a++
         }
-    } while(swapped);
+        else{
+            tempArr.push(right[b])
+            b++
+        }
+
+    }
+    while(b< right.length)
+    {
+        tempArr.push(right[b])
+        b++
+    }
+
+    while(a< left.length)
+    {
+        tempArr.push(left[a])
+        a++
+    }
+    console.log('the array after merge is', tempArr)
+    return tempArr
+
+    return tempArr
 }
 
+let arr = [1,5,3,2, 6]
+let gen = mergeSort(0,arr.length,arr)
+
+console.log('first',gen.next())
+console.log('second',gen.next())
+console.log('third',gen.next())
+console.log('four',gen.next())
+console.log('5',gen.next())
+console.log('6',gen.next())
+console.log('7',gen.next())
+console.log('8',gen.next())
+console.log('9',gen.next())
+
+/*
+ALL THIS IS AN OLD RECURSIVE ALGORITHM FOR MERGE SORT, ITS TOUGH TO YIELD FROM THOUGH
+function* merge(start, Larr, Rarr) {
+    //start should be the index in the main array where the two sorted subarrays start
 
 
-function useSortingVisualizer(baseArray, algorithm){
-    const [displayedArray, setArray] = useState/*<number[]>*/([]);
-    const [done, setDone] = useState(true);
-    const [resetCount, reset] = useReducer(0, (state) => state + 1);
-    const [barEffects, setBarEffects] = useState/*<Record<number, string>>*/({})
-    const stepRef = useRef(() => {});
-    useEffect(() => {
-        let workingArray = baseArray;
-        setArray(workingArray);
-        setBarEffects({});
-        setDone(false);
-        const generator = algorithm(0, baseArray.length);
-        let nextValue = 0;
-        function doStep() {
-            const action = generator.next(nextValue);
-            console.log(action)
-            if (action.done) {
-                setDone(true);
-            } else if (action.value[0] === 'compare') {
-                const a = workingArray[action.value[1]];
-                const b = workingArray[action.value[2]];
-                if(a > b) {
-                    nextValue = 1;
-                } else if (a < b) {
-                    nextValue = -1;
-                } else {
-                    nextValue = 0;
-                }
-                setBarEffects({
-                    [action.value[1]]: 'red',
-                    [action.value[2]]: 'red',
-                })
-            } else if (action.value[0] === 'swap') {
-                workingArray = [...workingArray]
-                const tmp = workingArray[action.value[1]];
-                workingArray[action.value[1]] = workingArray[action.value[2]];
-                workingArray[action.value[2]] = tmp;
-                setArray(workingArray);
-                setBarEffects({
-                    [action.value[1]]: 'green',
-                    [action.value[2]]: 'green',
-                })
-            } else {
-                throw new Error('What? ' + JSON.stringify(action.value));
-            }
+    Larr = Larr.next().value
+    Rarr = Rarr.next().value
+    console.log('now the arrays to be merged are ', Larr, Rarr)
+    // Break out of loop if any one of the array gets empty
+    let tempArr = []
+    let a = 0
+    let b = 0
+    let c = 0
+
+    console.log('the indexes that are being overwritten are '+start+' to '+(start+Larr.length+Rarr.length))
+
+
+    while (a < Larr.length  && b < Rarr.length) {
+        if(Larr[a] < Rarr[b])
+        {
+            tempArr.push(Larr[a])
+            a++
         }
-        stepRef.current = doStep;
-    }, [resetCount, baseArray, algorithm])
+        else{
+            tempArr.push(Rarr[b])
+            b++
+        }
 
-    const step = useCallback(() => {
-        stepRef.current();
-    }, [stepRef]);
-    return {
-        displayedArray,
-        done,
-        step,
-        reset,
-        barEffects,
+    }
+    while(b< Rarr.length)
+    {
+        tempArr.push(Rarr[b])
+        b++
+    }
+
+    while(a< Larr.length)
+    {
+        tempArr.push(Larr[a])
+        a++
+    }
+    console.log('the array after merge is', tempArr)
+    return tempArr
+    // Pick the smaller among the smallest element of left and right sub arrays
+    /!*
+    if ((yield compare(Lstart, Rstart)) > 0) {
+        yield set(Lstart, arr[Rstart] )
+    } else {
+        yield set(Lstart, arr[Lstart] )
     }
 }
 
-// End sorting things
+     *!/
+
+
+}
 
 
 
-function makeArray(length) {
-    const array = [];
-    for(let i = 0; i < length; i++) {
-        array.push(i);
+function* mergeSort(start, end, arr) {
+    console.log('the indexes are start: ' + start + ' end: ' + end)
+
+    let middle = Math.floor((end + start) / 2)
+
+    if (end - start < 2) {
+        let baseCaseArr = arr.slice(start, end)
+        console.log('we reached the base case, This already feels like a success heres what we return', baseCaseArr)
+        return arr.slice(start, end)
     }
-    array.sort(() => Math.random() < 0.5 ? 1 : -1);
-    array.sort(() => Math.random() < 0.5 ? 1 : -1);
-    return array;
+
+
+    let result = yield* merge(start, mergeSort(start, middle, arr), mergeSort(middle, end, arr))
+    console.log('the result from merge is',result)
+    return result
 }
 
-const BAR_WIDTH = 12;
+let arr = [1,5,3,2, 6]
+let gen = mergeSort(0,arr.length,arr)
 
-function Test () {
-    const [baseArray, setArray] = useState(makeArray(20));
-    const [algorithm, setAlgorithm] = useState(() => bubbleSort);
-    const {
-        displayedArray,
-        done,
-        step,
-        reset,
-        barEffects,
-    } = useSortingVisualizer(baseArray, algorithm);
-    const [playing, setPlay] = useState(false);
-    useEffect(() => {
-        if(!done && playing) {
-            let taskId = window.setInterval(() => {
-                step();
-            }, 1000 / 30)
-            return () => window.clearInterval(taskId);
-        }
-    }, [done, step, playing])
-    return(
-        <div className="container">
-            <h1>Sorting example</h1>
-            <div className="array">
-                {displayedArray.map((value, index) => (
-                    <div
-                        key={value}
-                        className="bar"
-                        style={{
-                            left: index * BAR_WIDTH,
-                            width: BAR_WIDTH,
-                            bottom: 0,
-                            height: `${(value + 1) / displayedArray.length * 100}%`,
-                            backgroundColor: barEffects[index],
-                        }}
-                        title={`Value: ${value}`}
-                    ></div>
-                ))}
-            </div>
-            <div>
-                <h2> Controls: </h2>
-                <button onClick={() => setArray(makeArray(20))}>Random array</button>
-                <h3>Timeline control</h3>
-                <button onClick={step}>Single step</button>
-                <button onClick={reset}>Reset</button>
-                <button onClick={() => setPlay(playing => !playing)}>{playing ? 'Pause autoplay' : 'Autoplay'}</button>
-            </div>
-        </div>
-    );
-}
-export default Test
+console.log(gen.next())*/
 
 
