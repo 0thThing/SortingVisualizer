@@ -1,10 +1,10 @@
 import React,{ useState, useReducer, useEffect, useRef, useCallback } from 'react'
 import Bar from './Bar'
 import Header from "./Header";
-import {bubbleSort, insertionSort} from "../algorithms";
+import {bubbleSort, insertionSort, mergeSort, quickSort } from "../algorithms";
 
 function compare(a/*: number*/, b/*: number*/)/*: ['compare', number, number]*/ {
-    console.log('compare called')
+    console.log('compare called',a,' b: ',b)
     return ['compare', a, b];
 }
 function swap(a/*: number*/, b/*: number*/)/*: ['swap', number, number]*/ {
@@ -46,14 +46,16 @@ todo        automatically give their return to each other in a deep recursive lo
 
 
  */
+/*
 function* mergeSort(start, end, arr) {
-    console.log('the indexes are start: ' + start + ' end: ' + end)
+    console.log(' does this array ever change? ', arr)
+    //console.log('the indexes are start: ' + start + ' end: ' + end)
 
     let middle = Math.floor((end + start) / 2)
 
     if (end - start < 2) {
         let baseCaseArr = arr.slice(start, end)
-        console.log('we reached the base case, This already feels like a success heres what we return', baseCaseArr)
+        //console.log('we reached the base case, This already feels like a success heres what we return', baseCaseArr)
         return arr.slice(start, end)
     }
 
@@ -66,8 +68,8 @@ function* mergeSort(start, end, arr) {
     //right = right.next().value
     console.log(left)
 
-    yield overwriteSection(start, left)
-    yield overwriteSection(start, right)
+    //yield overwriteSection(start, left)
+    //yield overwriteSection(start, right)
 
     //console.log('now the arrays to be merged are ', left, right)
 
@@ -78,7 +80,9 @@ function* mergeSort(start, end, arr) {
 
 
     while (a < left.length  && b < right.length) {
-        if((yield compare(left[a] < right[b]) === 1))
+
+        if((yield compare(start + a , start + left.length +b)) < 1)
+        //if(left[a]< right[b])
         {
             tempArr.push(left[a])
             a++
@@ -105,6 +109,7 @@ function* mergeSort(start, end, arr) {
 
 
 }
+*/
 
 
 function useSortingVisualizer(baseArray, algorithm){
@@ -130,6 +135,7 @@ function useSortingVisualizer(baseArray, algorithm){
                 console.log('the generator is done')
                 setDone(true);
             } else if (action.value[0] === 'compare') {
+                console.log(' we have these values sent to compare ', action.value)
                 const a = workingArray[action.value[1]];
                 const b = workingArray[action.value[2]];
                 if(a > b) {
@@ -142,6 +148,16 @@ function useSortingVisualizer(baseArray, algorithm){
                 setBarEffects({
                     [action.value[1]]: 'red',
                     [action.value[2]]: 'red',
+                })
+            }
+            else if (action.value[0] === 'insert') {
+                workingArray = [...workingArray]
+                workingArray.splice(action.value[1], 0 , action.value[2])
+
+                setArray(workingArray);
+                setBarEffects({
+                    [action.value[1]]: 'green',
+
                 })
             }
             else if (action.value[0] === 'swap') {
@@ -220,10 +236,11 @@ function useSortingVisualizer(baseArray, algorithm){
 
             else if(action.value[0] === 'partition') {
                 workingArray = [...workingArray]
-                nextValue = workingArray.slice(action[1], action[2] )
+                nextValue = workingArray.slice(action.value[1], action.value[2] )
+                console.log("%cthe value being passed back is " ,"color: green", nextValue)
                 setBarEffects({
                     [action.value[1]]: 'blue',
-                    [action.value[2]]: 'blue',
+                    [action.value[2]-1]: 'blue',
                 })
             }
             else if(action.value[0] === 'compareVal') {
@@ -246,7 +263,7 @@ function useSortingVisualizer(baseArray, algorithm){
             else {
                 throw new Error('What? ' + JSON.stringify(action.value));
             }
-            console.log('we passed the ifs', done, Array.isArray(action.value))
+
         }
         stepRef.current = doStep;
     }, [baseArray, algorithm])
@@ -273,10 +290,10 @@ function makeArray(length,minVal, maxVal) {
 
 function Algorithm(props){
     let min = 3
-    console.log('component is being rendered')
+
 
     let max = 1000
-    let arrLength = 600
+    let arrLength = 10
 
     const [arr, setArr] = useState(makeArray(arrLength, min, max))
     const algorithm = useRef( bubbleSort);
@@ -308,7 +325,7 @@ function Algorithm(props){
 
         return (
                 <div key={idx} className='array-bar' style={{backgroundColor: barEffects[idx] ,height: barHeight, bottom: '0', marginRight: '1px'}}>
-
+                    {num}
                 </div>
             )
 
@@ -327,6 +344,7 @@ function Algorithm(props){
                     <button onClick={(e) => algorithm.current = insertionSort} className="btn btn-outline-success m-1" type="button">insertion sort</button>
                     <button onClick={(e) => algorithm.current =bubbleSort} className="btn btn-outline-success m-1" type="button">bubble sort</button>
                     <button onClick={(e) => algorithm.current =mergeSort} className="btn btn-outline-success m-1" type="button">merge sort</button>
+                <button onClick={(e) => algorithm.current = quickSort} className="btn btn-outline-success m-1" type="button">quick sort</button>
 
             </nav>
             <div className='array-container'>
